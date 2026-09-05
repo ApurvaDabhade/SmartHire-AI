@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
+  <defs>
+    <linearGradient id="aiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="50%" stop-color="#7c3aed" />
+      <stop offset="100%" stop-color="#9333ea" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#7c3aed" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  <rect width="36" height="36" rx="10" fill="url(#aiGrad)" filter="url(#glow)"/>
+  <!-- AI 4-point sparkle star -->
+  <path d="M18 7 C18 13.5 13.5 18 7 18 C13.5 18 18 22.5 18 29 C18 22.5 22.5 18 29 18 C22.5 18 18 13.5 18 7 Z" fill="#ffffff" />
+  <!-- Small satellite sparkles -->
+  <circle cx="26" cy="10" r="1.5" fill="#ffffff" opacity="0.9" />
+  <circle cx="10" cy="25" r="1.2" fill="#ffffff" opacity="0.8" />
+  <circle cx="25" cy="24" r="1" fill="#ffffff" opacity="0.85" />
+</svg>

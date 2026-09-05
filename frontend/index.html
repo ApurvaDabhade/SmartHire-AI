@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartHire.Ai — Candidate Screening with RAG</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand" onclick="window.location.reload()">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor">
+            <path d="M12 2 C12 7.5 7.5 12 2 12 C7.5 12 12 16.5 12 22 C12 16.5 16.5 12 22 12 C16.5 12 12 7.5 12 2 Z" fill="#ffffff"/>
+            <circle cx="18" cy="5" r="1" fill="#ffffff"/>
+            <circle cx="5" cy="18" r="0.8" fill="#ffffff"/>
+          </svg>
+        </div>
+        <span class="brand-title">SmartHire<span class="brand-accent">.Ai</span></span>
+      </div>
+
+      <div class="nav-actions">
+        <button id="uploadBtn" class="nav-dataset-pill" title="Dataset & CSV Upload">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <span id="poolBadge">228 Resumes</span>
+        </button>
+        <div class="model-badge" id="modelBadge">MiniLM · FAISS · GPT-OSS-20B</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Hero Banner (Dark Gradient) -->
+    <section class="hero-section" id="heroSection">
+      <div class="hero-container">
+        <div class="hero-tag">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 3h5v5"/>
+            <path d="M8 3H3v5"/>
+            <path d="M12 21v-4a4 4 0 0 0-4-4H3"/>
+            <path d="M12 21v-4a4 4 0 0 1 4-4h5"/>
+            <circle cx="12" cy="21" r="1"/>
+          </svg>
+          <span>Retrieval-Augmented Generation</span>
+        </div>
+
+        <h1 class="hero-headline">
+          Screen candidates in seconds, <span class="hl-purple">not</span><br>
+          <span class="hl-cyan">spreadsheets.</span>
+        </h1>
+
+        <p class="hero-subtitle">
+          Paste a job description and get a ranked, explainable shortlist — retrieved semantically and reasoned over by an LLM.
+        </p>
+      </div>
+    </section>
+
+    <!-- Content Workspace -->
+    <div class="content-wrapper">
+      
+      <!-- Suggestions Card (Shown before search) -->
+      <div class="suggestions-card" id="suggestionsCard">
+        <div class="sparkle-circle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3 C12 7.5 7.5 12 2 12 C7.5 12 12 16.5 12 21 C12 16.5 16.5 12 22 12 C16.5 12 12 7.5 12 3 Z" fill="#9333ea"/>
+            <circle cx="18" cy="6" r="1.2" fill="#9333ea"/>
+            <circle cx="6" cy="18" r="0.9" fill="#9333ea"/>
+          </svg>
+        </div>
+        <p class="suggestions-title">Try a job description, or look up an applicant directly.</p>
+        <div class="suggestions-chips">
+          <button class="chip-btn" data-query="Java Spring Boot developer with REST API and MySQL experience">
+            Java Spring Boot developer with REST API and MySQL experience
+          </button>
+          <div class="chips-row-wrap">
+            <button class="chip-btn" data-query="Python developer with NLP, LangChain and RAG experience">
+              Python developer with NLP, LangChain and RAG experience
+            </button>
+            <button class="chip-btn" data-query="Applicant ID 12">
+              Applicant ID 12
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Conversation Stream (Revealed during & after search) -->
+      <div class="chat-thread" id="chatThread"></div>
+
+      <!-- Floating Query Input Card -->
+      <div class="input-card" id="inputCard">
+        <textarea 
+          id="queryInput" 
+          rows="1" 
+          placeholder="Describe the role you're hiring for, or type an applicant ID..."
+          autocomplete="off"
+        ></textarea>
+        
+        <div class="input-bottom-bar">
+          <div class="rag-toggle-wrap">
+            <label class="switch" for="ragFusionToggle">
+              <input type="checkbox" id="ragFusionToggle">
+              <span class="slider"></span>
+            </label>
+            <label class="toggle-label" for="ragFusionToggle" id="toggleLabel">RAG Fusion for complex roles</label>
+          </div>
+
+          <div class="input-actions">
+            <button id="clearChatBtn" class="text-action-btn" title="Clear conversation" style="display:none;">
+              Clear chat
+            </button>
+            <button id="sendBtn" class="send-btn" title="Screen candidates">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"/>
+                <polyline points="5 12 12 5 19 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Clean Minimalist Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-left">© 2026 SmartHire.Ai</div>
+      <div class="footer-right">Retrieval-Augmented candidate screening</div>
+    </div>
+  </footer>
+
+  <!-- Floating Help Button -->
+  <button class="floating-help-btn" id="helpBtn" title="Help & About">?</button>
+
+  <!-- Resume Detail Modal -->
+  <div class="modal-overlay" id="resumeModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <span class="modal-pill" id="resumeModalBadge">Candidate Profile</span>
+          <h3 class="modal-title" id="resumeModalTitle">Applicant Resume</h3>
+        </div>
+        <button class="modal-close-btn" id="closeResumeModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <pre class="resume-pre" id="resumeContent"></pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="copyResumeBtn">Copy Resume</button>
+        <button class="btn btn-primary" id="doneResumeBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSV Upload Modal -->
+  <div class="modal-overlay" id="uploadModal">
+    <div class="modal-dialog upload-dialog">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Resume Pool & CSV Upload</h3>
+          <p class="modal-desc">Upload your own CSV resumes to search across custom applicant candidates.</p>
+        </div>
+        <button class="modal-close-btn" id="closeUploadModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-icon-circle">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <p class="drop-title">Drop your resumes CSV here, or click to browse</p>
+          <p class="drop-subtitle">Recommended columns: <code>Resume</code> and <code>ID</code> (auto-mapped if named differently)</p>
+          <input type="file" id="csvFileInput" accept=".csv" style="display:none;">
+          <button class="btn btn-secondary" id="selectFileBtn">Select CSV File</button>
+        </div>
+
+        <div id="uploadStatus" class="upload-status" style="display:none;"></div>
+      </div>
+      <div class="modal-footer space-between">
+        <button class="btn btn-ghost" id="resetDefaultBtn">Reset to Default Dataset</button>
+        <button class="btn btn-secondary" id="closeUploadBtn">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help & About Modal -->
+  <div class="modal-overlay" id="helpModal">
+    <div class="modal-dialog help-dialog">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">SmartHire.Ai Screening System</h3>
+          <p class="modal-desc">Autonomous RAG & RAG Fusion Candidate Intelligence</p>
+        </div>
+        <button class="modal-close-btn" id="closeHelpModal">&times;</button>
+      </div>
+      <div class="modal-body help-content">
+        <h4>How Screening Works</h4>
+        <ul>
+          <li><strong>Semantic RAG:</strong> Searches candidate resumes using vector embeddings to match context, domain experience, and skills even when words don't match literally.</li>
+          <li><strong>RAG Fusion (Toggle):</strong> Splits multi-requirement job postings into 3–4 sub-queries and aggregates candidates using Reciprocal Rank Fusion (RRF) to discover well-rounded candidates.</li>
+          <li><strong>Explainable Shortlists:</strong> Groq LLM evaluates the retrieved applicants against your criteria, provides comparison matrices, and explains candidate trade-offs.</li>
+        </ul>
+
+        <h4>Useful Queries to Try</h4>
+        <ul>
+          <li><strong>By Job Description:</strong> <em>"Senior backend engineer with Go, Kafka, distributed systems, and AWS"</em></li>
+          <li><strong>By Applicant ID:</strong> <em>"Applicant ID 12"</em> or <em>"Tell me about candidate 154"</em></li>
+          <li><strong>Follow-up Comparisons:</strong> <em>"Compare the top 2 candidates and rank their cloud experience"</em></li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="closeHelpBtn">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <script src="/static/marked.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

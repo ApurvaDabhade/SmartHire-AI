@@ -4,7 +4,11 @@ import sys
 sys.dont_write_bytecode = True
 
 from typing import List
-from pydantic import BaseModel, Field
+
+try:
+  from pydantic.v1 import BaseModel, Field
+except ImportError:
+  from pydantic import BaseModel, Field
 
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain.agents import tool
