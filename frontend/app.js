@@ -105,13 +105,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Append user message card
     const userMsg = appendUserMessage(text);
-    userMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (userMsg && typeof userMsg.scrollIntoView === 'function') {
+      userMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
     // Create assistant message placeholder
     const { assistantWrap, aiTextContainer, typingCursor, metaContainer, candidateGrid } = createAssistantMessageHolder();
     chatThread.appendChild(assistantWrap);
 
-    const isRagFusion = ragFusionToggle.checked;
+    const isRagFusion = ragFusionToggle ? ragFusionToggle.checked : false;
     const ragMode = isRagFusion ? 'RAG Fusion' : 'Generic RAG';
 
     let fullAiResponse = '';
@@ -167,14 +169,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.scrollBy({ top: rect.bottom - window.innerHeight + 30, behavior: 'smooth' });
               }
             } else if (data.type === 'error') {
-              aiTextContainer.innerHTML = `<span style="color:#ef4444;">⚠️ ${data.message}</span>`;
+              aiTextContainer.innerHTML = `<span style="color:#ef4444;">⚠️ ${escapeHtml(data.message)}</span>`;
             } else if (data.type === 'done') {
-              typingCursor.remove();
+              if (typingCursor.parentNode) {
+                typingCursor.parentNode.removeChild(typingCursor);
+              }
             }
           } catch (err) {
             console.error('Error parsing SSE frame:', err, jsonStr);
           }
         }
+      }
+
+      // Check remaining buffer if any
+      if (buffer && buffer.trim().startsWith('data:')) {
+        try {
+          const jsonStr = buffer.trim().replace(/^data:\s*/, '');
+          const data = JSON.parse(jsonStr);
+          if (data.type === 'token') {
+            fullAiResponse += data.content;
+            renderMarkdown(aiTextContainer, fullAiResponse);
+          }
+        } catch (_) {}
       }
 
       // Record to chat history
@@ -185,9 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (error) {
       console.error('Chat error:', error);
-      aiTextContainer.innerHTML = `<span style="color:#ef4444;">⚠️ Failed to connect to server: ${error.message}</span>`;
+      aiTextContainer.innerHTML = `<span style="color:#ef4444;">⚠️ Failed to connect to server: ${escapeHtml(error.message)}</span>`;
     } finally {
-      typingCursor.remove();
+      if (typingCursor.parentNode) {
+        typingCursor.parentNode.removeChild(typingCursor);
+      }
       isGenerating = false;
       sendBtn.disabled = false;
       queryInput.focus();
@@ -199,6 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
     userMsg.className = 'message-item';
     userMsg.innerHTML = `<div class="user-message-card">${escapeHtml(text)}</div>`;
     chatThread.appendChild(userMsg);
+    return userMsg;
   }
 
   function createAssistantMessageHolder() {
@@ -290,9 +309,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Markdown rendering helper
   function renderMarkdown(container, text) {
-    if (window.marked && typeof window.marked.parse === 'function') {
-      container.innerHTML = window.marked.parse(text);
-      return;
+    if (window.marked) {
+      try {
+        const parsed = typeof window.marked.parse === 'function'
+          ? window.marked.parse(text, { async: false })
+          : (typeof window.marked === 'function' ? window.marked(text) : null);
+        if (typeof parsed === 'string') {
+          container.innerHTML = parsed;
+          return;
+        }
+      } catch (e) {
+        // Fall back gracefully to built-in formatter if marked throws on partial streaming token
+      }
     }
     // Simple fast safe markdown formatter
     let formatted = escapeHtml(text)
