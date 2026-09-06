@@ -1,8 +1,36 @@
 # SmartHire AI
 
-Resume screening chatbot built on a **RAG / RAG Fusion** pipeline. This repository is based on the [Resume Screening RAG Pipeline](https://github.com/Hungreeee/Resume-Screening-RAG-Pipeline) thesis POC, with a Groq-backed local demo and CSV resume upload.
+Resume screening chatbot built on a **RAG / RAG Fusion** pipeline with a modern web UI, FastAPI streaming backend, and Groq LLM agent (`openai/gpt-oss-20b`).
 
-**Repository:** [https://github.com/ApurvaDabhade/SmartHire-AI](https://github.com/ApurvaDabhade/SmartHire-AI)
+**Repository:** [https://github.com/ApurvaDabhade/SmartHire-AI](https://github.com/ApurvaDabhade/SmartHire-AI)  
+**Frontend Folder:** [`frontend/`](https://github.com/ApurvaDabhade/SmartHire-AI/tree/main/frontend) (HTML5, CSS3, Vanilla JS, Marked.js)  
+**API Backend:** [`app.py`](https://github.com/ApurvaDabhade/SmartHire-AI/blob/main/app.py) (FastAPI, SSE Token Streaming)
+
+---
+
+## 🚀 Quickstart: Modern Web Application (Recommended)
+
+Run the modern web interface:
+
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Add your Groq API key in .env
+cp .env.example .env
+# Edit .env with your GROQ_API_KEY
+
+# 3. Start the FastAPI server
+uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+Open your browser at **[http://localhost:8000](http://localhost:8000)**.
+
+### Features:
+- ⚡ **Autonomous RAG & RAG Fusion**: Real-time token streaming with live query decomposition.
+- 🎯 **Candidate Shortlists**: Ranked cards with match scores and instant "Inspect Full Resume" modal.
+- 📁 **CSV Dataset Upload**: Ingest and index custom applicant CSVs on the fly into FAISS.
+- 🎨 **Modern AI-Native UI**: Dark nebula gradient hero, suggestions chips, glowing switches, and responsive layout in [`frontend/`](https://github.com/ApurvaDabhade/SmartHire-AI/tree/main/frontend).
 
 ---
 
